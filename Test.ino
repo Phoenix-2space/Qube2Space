@@ -1,14 +1,16 @@
 #include <Wire.h>                           // Folosita pentru comunicarea prin protocolul I2C
 #include <MS5611.h>                         // Folosita pentru a interactiona cu senzorul de presiune si temperatura MS5411 / GY63
+#include <MQ135.h>                          // Folosita pentru a interactiona cu senzorul de gaze MQ135
 #include <SD.h>
 #include <SPI.h>
 
 File myFile;
 int pinCS = 8;                              // D8 
 MS5611 ms5611;
-float presiuneSol;
+MQ135 mq135_sensor(PIN_MQ135);              // Senzorul de gaze necesita calibrare si un mic setup code ce il vom adauga la momentul constructiei
+double presiuneSol;
 
-void debug_ms5611(float t, long p, float a, float A);
+void debug_ms5611(double t, double p, double a, double A);
 
 void setup() {
   Serial.begin(9600);
@@ -30,7 +32,7 @@ void setup() {
 
   myFile = SD.open("date.csv", FILE_WRITE);                                   // Initializare cap de tabel 
   if(myFile){
-    myFile.println("Altitudine,Presiune,Temperatura");
+    myFile.println("Altitudine,Presiune,Temperatura,PPM");
     myFile.close();
   }
   else{
@@ -39,9 +41,10 @@ void setup() {
 }
 
 void loop() {
-  float temperatura = ms5611.getTemperature();                 // Masurata in grade celsius
-  float presiune = ms5611.getPressure();                        // Masurata in milibari 1 mBa = 100 Pa
-  float altitudine;
+  double temperatura = ms5611.getTemperature();                                               // Masurata in grade celsius
+  double presiune = ms5611.getPressure();                                                     // Masurata in milibari 1 mBa = 100 Pa
+  double altitudine = 44330.0 * (1-pow(presiune/presiuneSol, 1/5.255));                       // Altitudinea rachetei
+  float ppm = mq135_sensor.getPPM();                                                          // Calitate aer
 
   myFile = SD.open("date.csv", FILE_WRITE);
   if(myFile){
@@ -49,7 +52,9 @@ void loop() {
     myFile.print(",");
     myFile.print(presiune);
     myFile.print(",");
-    myFile.println(temperatura);
+    myFile.print(temperatura);
+    myFile.print(",");
+    myFile.println(ppm);
     myFile.close();
   }
   else{
@@ -60,7 +65,7 @@ void loop() {
   //delay(500);
 }
 
-void debug_ms5611(float t, long p, float a, float A){
+void debug_ms5611(double t, double p, double a, double A){
   Serial.println("-------------------");
   Serial.print("Temperatura: ");
   Serial.println(t);
