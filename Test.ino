@@ -7,7 +7,7 @@
 File myFile;
 int pinCS = 8;                              // D8 
 MS5611 ms5611;
-MQ135 mq135_sensor(PIN_MQ135);              // Senzorul de gaze necesita calibrare si un mic setup code ce il vom adauga la momentul constructiei
+MQ135 mq135_sensor(A0);                     // Senzorul de gaze necesita calibrare si un mic setup code ce il vom adauga la momentul constructiei
 double presiuneSol;
 
 void debug_ms5611(double t, double p, double a, double A);
